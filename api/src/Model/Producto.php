@@ -15,8 +15,7 @@ class Producto {
     /** @var int[] */
     public array $materiales;
 
-    public function __construct(array $data)
-    {
+    public function __construct(array $data) {
         $this->id = $data['id'] ?? null;
 
         if (!isset($data['codigo']) || $data['codigo'] === '') {
@@ -54,8 +53,23 @@ class Producto {
         $this->materiales = array_map('intval', $data['materiales']);
     }
 
-    public function toArray(): array
+    /** @param int[] $materiales */
+    public static function fromRow(array $row, array $materiales): self
     {
+        return new self([
+            'id' => (int) $row['id'],
+            'codigo' => $row['codigo'],
+            'nombre' => $row['nombre'],
+            'descripcion' => $row['descripcion'],
+            'precio' => $row['precio'],
+            'moneda_id' => $row['moneda_id'],
+            'bodega_id' => $row['bodega_id'],
+            'sucursal_id' => $row['sucursal_id'],
+            'materiales' => $materiales,
+        ]);
+    }
+
+    public function toArray(): array {
         return [
             'id' => $this->id,
             'codigo' => $this->codigo,
@@ -66,6 +80,18 @@ class Producto {
             'bodega_id' => $this->bodega_id,
             'sucursal_id' => $this->sucursal_id,
             'materiales' => $this->materiales,
+        ];
+    }
+
+    public function toPdoParams(): array {
+        return [
+            ':codigo' => $producto->codigo,
+            ':nombre' => $producto->nombre,
+            ':descripcion' => $producto->descripcion,
+            ':precio' => $producto->precio,
+            ':moneda_id' => $producto->moneda_id,
+            ':bodega_id' => $producto->bodega_id,
+            ':sucursal_id' => $producto->sucursal_id,
         ];
     }
 }

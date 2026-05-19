@@ -12,18 +12,19 @@ use PDOException;
 class ProductoService {
     private PDO $pdo;
 
-    public function __construct(string $dsn, string $username, string $password)
-    {
+    public function __construct(string $dsn, string $username, string $password) {
         $db = Database::getInstance();
         $db->connect($dsn, $username, $password);
         $this->pdo = $db->getConnection();
     }
 
-    public function findAll(): array
-    {
+    public function findAll(): array {
         try {
             $rows = $this->pdo->query('SELECT * FROM productos ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
-            $data = array_map(fn (array $row) => $this->formatProducto($row), $rows);
+            $data = array_map(
+                fn (array $row) => Producto::fromRow($row, $this->loadMateriales((int) $row['id']))->toArray(),
+                $rows
+            );
 
             return ['success' => true, 'data' => $data];
         } catch (PDOException $e) {
@@ -31,18 +32,19 @@ class ProductoService {
         }
     }
 
-    public function find(int $id): array
-    {
+    public function find(int $id): array {
         $row = $this->fetchRow($id);
         if ($row === null) {
             return ['success' => false, 'errors' => ['Producto no encontrado']];
         }
 
-        return ['success' => true, 'data' => $this->formatProducto($row)];
+        return [
+            'success' => true,
+            'data' => Producto::fromRow($row, $this->loadMateriales($id))->toArray(),
+        ];
     }
 
-    public function create(array $data): array
-    {
+    public function create(array $data): array {
         try {
             $producto = new Producto($data);
         } catch (\InvalidArgumentException $e) {
@@ -58,11 +60,11 @@ class ProductoService {
             $this->pdo->beginTransaction();
 
             $stmt = $this->pdo->prepare('
-                INSERT INTO productos (codigo, nombre, descripcion, precio, moneda_id, bodega_id, sucursal_id, material_id)
-                VALUES (:codigo, :nombre, :descripcion, :precio, :moneda_id, :bodega_id, :sucursal_id, :material_id)
+                INSERT INTO productos (codigo, nombre, descripcion, precio, moneda_id, bodega_id, sucursal_id)
+                VALUES (:codigo, :nombre, :descripcion, :precio, :moneda_id, :bodega_id, :sucursal_id)
                 RETURNING id
             ');
-            $stmt->execute($this->productoParams($producto));
+            $stmt->execute($producto->toPdoParams());
             $productId = (int) $stmt->fetchColumn();
 
             $this->syncMateriales($productId, $producto->materiales);
@@ -76,8 +78,7 @@ class ProductoService {
         }
     }
 
-    public function update(int $id, array $data): array
-    {
+    public function update(int $id, array $data): array {
         if ($this->fetchRow($id) === null) {
             return ['success' => false, 'errors' => ['Producto no encontrado']];
         }
@@ -107,11 +108,10 @@ class ProductoService {
                     moneda_id = :moneda_id,
                     bodega_id = :bodega_id,
                     sucursal_id = :sucursal_id,
-                    material_id = :material_id,
                     fecha_actualizacion = CURRENT_TIMESTAMP
                 WHERE id = :id
             ');
-            $stmt->execute([...$this->productoParams($producto), ':id' => $id]);
+            $stmt->execute([...$producto->toPdoParams(), ':id' => $id]);
 
             $this->syncMateriales($id, $producto->materiales);
             $this->pdo->commit();
@@ -124,8 +124,7 @@ class ProductoService {
         }
     }
 
-    public function delete(int $id): array
-    {
+    public function delete(int $id): array {
         if ($this->fetchRow($id) === null) {
             return ['success' => false, 'errors' => ['Producto no encontrado']];
         }
@@ -140,8 +139,8 @@ class ProductoService {
         }
     }
 
-    private function validateProducto(Producto $producto): array
-    {
+    private function validateProducto(Producto $producto): array {
+        // Obtener Materiales
         $materialIds = array_map(
             'intval',
             $this->pdo->query('SELECT id FROM materiales')->fetchAll(PDO::FETCH_COLUMN)
@@ -150,8 +149,8 @@ class ProductoService {
         return ProductoValidator::validate($producto, $materialIds);
     }
 
-    private function fetchRow(int $id): ?array
-    {
+    // Query a la BD para obtener el producto
+    private function fetchRow(int $id): ?array {
         $stmt = $this->pdo->prepare('SELECT * FROM productos WHERE id = :id');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -159,8 +158,7 @@ class ProductoService {
         return $row !== false ? $row : null;
     }
 
-    private function loadMateriales(int $productId): array
-    {
+    private function loadMateriales(int $productId): array {
         $stmt = $this->pdo->prepare(
             'SELECT material_id FROM productos_materiales WHERE producto_id = :id ORDER BY material_id'
         );
@@ -169,37 +167,8 @@ class ProductoService {
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function formatProducto(array $row): array
-    {
-        return [
-            'id' => (int) $row['id'],
-            'codigo' => $row['codigo'],
-            'nombre' => $row['nombre'],
-            'descripcion' => $row['descripcion'],
-            'precio' => (float) $row['precio'],
-            'moneda_id' => (int) $row['moneda_id'],
-            'bodega_id' => (int) $row['bodega_id'],
-            'sucursal_id' => (int) $row['sucursal_id'],
-            'materiales' => $this->loadMateriales((int) $row['id']),
-        ];
-    }
-
-    private function productoParams(Producto $producto): array
-    {
-        return [
-            ':codigo' => $producto->codigo,
-            ':nombre' => $producto->nombre,
-            ':descripcion' => $producto->descripcion,
-            ':precio' => $producto->precio,
-            ':moneda_id' => $producto->moneda_id,
-            ':bodega_id' => $producto->bodega_id,
-            ':sucursal_id' => $producto->sucursal_id,
-            ':material_id' => $producto->materiales[0],
-        ];
-    }
-
-    private function syncMateriales(int $productId, array $materialIds): void
-    {
+    // Update/Create en tabla productos_materiales
+    private function syncMateriales(int $productId, array $materialIds): void {
         $delete = $this->pdo->prepare('DELETE FROM productos_materiales WHERE producto_id = :id');
         $delete->execute([':id' => $productId]);
 
