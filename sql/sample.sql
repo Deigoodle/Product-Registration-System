@@ -1,9 +1,4 @@
 -- PostgreSQL initialization script for Product Registration System
--- Creates database and core tables for products, customers, and registrations.
-
-CREATE DATABASE product_registration;
-
-\connect product_registration;
 
 CREATE TABLE IF NOT EXISTS monedas (
     id SERIAL PRIMARY KEY,

@@ -1,9 +1,11 @@
-services:
+services: 
   postgres:
     image: postgres:16-alpine
+    container_name: postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: product_db
     volumes:
       - ./sql:/docker-entrypoint-initdb.d:ro
       - postgres_data:/var/lib/postgresql/data
@@ -14,6 +16,19 @@ services:
       interval: 10s
       retries: 5
       start_period: 30s
+
+  php-api:
+    build: ./api
+    container_name: product_api
+    environment:
+      - DB_DSN=pgsql:host=postgres;port=5432;dbname=product_db
+      - DB_USER=admin
+      - DB_PASS=adminpassword
+    ports:
+      - "9999:9999"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
