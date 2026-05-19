@@ -99,7 +99,7 @@ function responseStatus(array $result, int $successStatus = 200): int
 }
 
 $dbDsn = env('DB_DSN', 'pgsql:host=postgres;port=5432;dbname=product_db');
-$dbUser = env('DB_USER', 'admin');
+$dbUser = env('DB_USER', 'postgres');
 $dbPass = env('DB_PASS', 'adminpassword');
 
 $resources = [

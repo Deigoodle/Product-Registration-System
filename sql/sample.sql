@@ -1,5 +1,7 @@
 -- PostgreSQL initialization script for Product Registration System
 
+\c product_db;
+
 CREATE TABLE IF NOT EXISTS monedas (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,

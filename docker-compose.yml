@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: postgres
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: adminpassword
       POSTGRES_DB: product_db
     volumes:
@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d product_db"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -22,7 +22,7 @@ services:
     container_name: product_api
     environment:
       - DB_DSN=pgsql:host=postgres;port=5432;dbname=product_db
-      - DB_USER=admin
+      - DB_USER=postgres
       - DB_PASS=adminpassword
     ports:
       - "9999:9999"
