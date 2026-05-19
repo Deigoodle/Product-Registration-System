@@ -43,6 +43,24 @@ class SucursalService {
         ];
     }
 
+    public function findByBodega(int $bodegaId): array {
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM sucursales WHERE bodega_id = :bodega_id ORDER BY id'
+            );
+            $stmt->execute([':bodega_id' => $bodegaId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = array_map(
+                fn (array $row) => Sucursal::fromRow($row)->toArray(),
+                $rows
+            );
+
+            return ['success' => true, 'data' => $data];
+        } catch (PDOException $e) {
+            return ['success' => false, 'errors' => [$e->getMessage()]];
+        }
+    }
+
     private function fetchRow(int $id): ?array {
         $stmt = $this->pdo->prepare('SELECT * FROM sucursales WHERE id = :id');
         $stmt->execute([':id' => $id]);

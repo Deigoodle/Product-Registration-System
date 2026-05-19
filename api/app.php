@@ -15,6 +15,22 @@ use App\Service\MonedaService;
 use App\Service\ProductoService;
 use App\Service\SucursalService;
 
+function applyCors(): void
+{
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+    header('Vary: Origin');
+}
+
+applyCors();
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 function jsonResponse(array $data, int $status = 200): never
@@ -48,6 +64,22 @@ function parseJsonBody(): array
 function resourceIdFromPath(string $path, string $resource): ?int
 {
     if (preg_match('#^/' . preg_quote($resource, '#') . '/(\d+)$#', $path, $matches) !== 1) {
+        return null;
+    }
+    return (int) $matches[1];
+}
+
+function resourceCodigoFromPath(string $path, string $resource): ?string
+{
+    if (preg_match('#^/' . preg_quote($resource, '#') . '/codigo/([^/]+)$#', $path, $matches) !== 1) {
+        return null;
+    }
+    return rawurldecode($matches[1]);
+}
+
+function resourceBodegaIdFromPath(string $path, string $resource): ?int
+{
+    if (preg_match('#^/' . preg_quote($resource, '#') . '/bodega/(\d+)$#', $path, $matches) !== 1) {
         return null;
     }
     return (int) $matches[1];
@@ -109,9 +141,21 @@ try {
         $controller = $config['controller'];
         $basePath = '/' . $name;
         $id = resourceIdFromPath($path, $name);
+        $codigo = $name === 'productos' ? resourceCodigoFromPath($path, $name) : null;
+        $bodegaId = $name === 'sucursales' ? resourceBodegaIdFromPath($path, $name) : null;
 
         if ($method === 'GET' && $path === $basePath) {
             $result = $controller->index();
+            jsonResponse($result, responseStatus($result));
+        }
+
+        if ($method === 'GET' && $codigo !== null && $name === 'productos') {
+            $result = $controller->showByCodigo($codigo);
+            jsonResponse($result, responseStatus($result));
+        }
+
+        if ($method === 'GET' && $bodegaId !== null && $name === 'sucursales') {
+            $result = $controller->showByBodega($bodegaId);
             jsonResponse($result, responseStatus($result));
         }
 

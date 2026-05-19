@@ -11,28 +11,27 @@ class ProductoController {
     ) {
     }
 
-    public function index(): array
-    {
+    public function index(): array {
         return $this->productoService->findAll();
     }
 
-    public function show(int $id): array
-    {
+    public function show(int $id): array {
         return $this->productoService->find($id);
     }
 
-    public function create(array $data): array
-    {
+    public function showByCodigo(string $codigo): array {
+        return $this->productoService->findByCodigo($codigo);
+    }
+
+    public function create(array $data): array {
         return $this->productoService->create($data);
     }
 
-    public function update(int $id, array $data): array
-    {
+    public function update(int $id, array $data): array {
         return $this->productoService->update($id, $data);
     }
 
-    public function delete(int $id): array
-    {
+    public function delete(int $id): array {
         return $this->productoService->delete($id);
     }
 }

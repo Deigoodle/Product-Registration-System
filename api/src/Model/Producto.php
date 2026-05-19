@@ -85,13 +85,13 @@ class Producto {
 
     public function toPdoParams(): array {
         return [
-            ':codigo' => $producto->codigo,
-            ':nombre' => $producto->nombre,
-            ':descripcion' => $producto->descripcion,
-            ':precio' => $producto->precio,
-            ':moneda_id' => $producto->moneda_id,
-            ':bodega_id' => $producto->bodega_id,
-            ':sucursal_id' => $producto->sucursal_id,
+            ':codigo' => $this->codigo,
+            ':nombre' => $this->nombre,
+            ':descripcion' => $this->descripcion,
+            ':precio' => $this->precio,
+            ':moneda_id' => $this->moneda_id,
+            ':bodega_id' => $this->bodega_id,
+            ':sucursal_id' => $this->sucursal_id,
         ];
     }
 }

@@ -44,6 +44,18 @@ class ProductoService {
         ];
     }
 
+    public function findByCodigo(string $codigo): array {
+        $row = $this->fetchRowByCodigo($codigo);
+        if ($row === null) {
+            return ['success' => false, 'errors' => ['Producto no encontrado']];
+        }
+
+        return [
+            'success' => true,
+            'data' => Producto::fromRow($row, $this->loadMateriales((int) $row['id']))->toArray(),
+        ];
+    }
+
     public function create(array $data): array {
         try {
             $producto = new Producto($data);
@@ -153,6 +165,14 @@ class ProductoService {
     private function fetchRow(int $id): ?array {
         $stmt = $this->pdo->prepare('SELECT * FROM productos WHERE id = :id');
         $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row !== false ? $row : null;
+    }
+
+    private function fetchRowByCodigo(string $codigo): ?array {
+        $stmt = $this->pdo->prepare('SELECT * FROM productos WHERE codigo = :codigo');
+        $stmt->execute([':codigo' => $codigo]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row !== false ? $row : null;

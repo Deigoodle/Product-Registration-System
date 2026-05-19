@@ -11,28 +11,27 @@ class SucursalController {
     ) {
     }
 
-    public function index(): array
-    {
+    public function index(): array {
         return $this->sucursalService->findAll();
     }
 
-    public function show(int $id): array
-    {
+    public function show(int $id): array {
         return $this->sucursalService->find($id);
     }
 
-    public function create(array $data): array
-    {
+    public function showByBodega(int $id): array {
+        return $this->sucursalService->findByBodega($id);
+    }
+
+    public function create(array $data): array {
         return $this->sucursalService->create($data);
     }
 
-    public function update(int $id, array $data): array
-    {
+    public function update(int $id, array $data): array {
         return $this->sucursalService->update($id, $data);
     }
 
-    public function delete(int $id): array
-    {
+    public function delete(int $id): array {
         return $this->sucursalService->delete($id);
     }
 }
