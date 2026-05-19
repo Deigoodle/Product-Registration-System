@@ -5,42 +5,34 @@ namespace App\Controller;
 
 use App\Service\ProductoService;
 
-class ProductosController {
-    private ProductoService $productoService;
-
-    public function __construct() {
-        $this->productoService = new ProductoService();
+class ProductoController {
+    public function __construct(
+        private readonly ProductoService $productoService
+    ) {
     }
 
-    /**
-     * Endpoint: POST /productos
-     * Creates a new product
-     */
-    public function create(array $data): array {
+    public function index(): array
+    {
+        return $this->productoService->findAll();
+    }
+
+    public function show(int $id): array
+    {
+        return $this->productoService->find($id);
+    }
+
+    public function create(array $data): array
+    {
         return $this->productoService->create($data);
     }
 
-    /**
-     * Get all products (for testing)
-     */
-    public function index(): array {
-        // This would typically query the database for existing products
-        return ['productos' => []];
+    public function update(int $id, array $data): array
+    {
+        return $this->productoService->update($id, $data);
     }
 
-    /**
-     * Test endpoint to verify database connection
-     */
-    public function testConnection(): array {
-        $connection = new \PDO(
-            getenv('DB_DSN') ?? 'sqlite::memory:',
-            getenv('DB_USER') ?? '',
-            getenv('DB_PASS') ?? ''
-        );
-        
-        return [
-            'success' => true,
-            'message' => 'Database connection successful',
-        ];
+    public function delete(int $id): array
+    {
+        return $this->productoService->delete($id);
     }
 }

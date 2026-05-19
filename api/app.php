@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
+use App\Controller\ProductoController;
+use App\DB\Database;
 use App\Service\ProductoService;
 
 header('Content-Type: application/json; charset=utf-8');
@@ -26,39 +28,91 @@ function requestPath(): string
     return rtrim($path, '/') ?: '/';
 }
 
+function parseJsonBody(): array
+{
+    $body = json_decode(file_get_contents('php://input') ?: '{}', true);
+    if (!is_array($body)) {
+        jsonResponse(['success' => false, 'errors' => ['Invalid JSON body']], 400);
+    }
+    return $body;
+}
+
+function productoIdFromPath(string $path): ?int
+{
+    if (preg_match('#^/productos/(\d+)$#', $path, $matches) !== 1) {
+        return null;
+    }
+    return (int) $matches[1];
+}
+
+function responseStatus(array $result, int $successStatus = 200): int
+{
+    if (!($result['success'] ?? false)) {
+        $errors = $result['errors'] ?? [];
+        if (in_array('Producto no encontrado', $errors, true)) {
+            return 404;
+        }
+        return 400;
+    }
+    return $successStatus;
+}
+
 $dbDsn = env('DB_DSN', 'pgsql:host=postgres;port=5432;dbname=product_db');
 $dbUser = env('DB_USER', 'admin');
 $dbPass = env('DB_PASS', 'adminpassword');
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = requestPath();
+$productoId = productoIdFromPath($path);
+
+$producto_controller = new ProductoController(
+    new ProductoService($dbDsn, $dbUser, $dbPass)
+);
 
 try {
-    // GET /
     if ($method === 'GET' && $path === '/') {
         jsonResponse([
             'name' => 'Product Registration API',
             'version' => '1.0',
+            'routes' => [
+                'GET /productos' => 'List products',
+                'GET /productos/{id}' => 'Get product',
+                'POST /productos' => 'Create product',
+                'PUT /productos/{id}' => 'Update product',
+                'DELETE /productos/{id}' => 'Delete product',
+                'GET /health' => 'Database health check',
+            ],
         ]);
     }
 
-    // GET /health — check database connection
     if ($method === 'GET' && $path === '/health') {
-        new PDO($dbDsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        Database::getInstance()->connect($dbDsn, $dbUser, $dbPass);
         jsonResponse(['status' => 'ok', 'database' => 'connected']);
     }
 
-    // POST /productos — create a product
-    if ($method === 'POST' && $path === '/productos') {
-        $body = json_decode(file_get_contents('php://input') ?: '{}', true);
-        if (!is_array($body)) {
-            jsonResponse(['success' => false, 'errors' => ['Invalid JSON body']], 400);
-        }
+    if ($method === 'GET' && $path === '/productos') {
+        $result = $producto_controller->index();
+        jsonResponse($result, responseStatus($result));
+    }
 
-        $service = new ProductoService();
-        $service->initializeDatabaseConnection($dbDsn, $dbUser, $dbPass);
-        $result = $service->create($body);
-        jsonResponse($result, ($result['success'] ?? false) ? 201 : 400);
+    if ($method === 'GET' && $productoId !== null) {
+        $result = $producto_controller->show($productoId);
+        jsonResponse($result, responseStatus($result));
+    }
+
+    if ($method === 'POST' && $path === '/productos') {
+        $result = $producto_controller->create(parseJsonBody());
+        jsonResponse($result, responseStatus($result, 201));
+    }
+
+    if ($method === 'PUT' && $productoId !== null) {
+        $result = $producto_controller->update($productoId, parseJsonBody());
+        jsonResponse($result, responseStatus($result));
+    }
+
+    if ($method === 'DELETE' && $productoId !== null) {
+        $result = $producto_controller->delete($productoId);
+        jsonResponse($result, responseStatus($result));
     }
 
     jsonResponse(['error' => 'Not found'], 404);

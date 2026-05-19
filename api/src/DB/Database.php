@@ -7,36 +7,11 @@ use PDO;
 use PDOException;
 
 class Database {
-    private ?string $dsn = null;
-    private ?string $username = null;
-    private ?string $password = null;
     private static ?self $instance = null;
+    private ?PDO $pdo = null;
 
     private function __construct()
     {
-    }
-
-    public function connect(string $dsn, string $username, string $password): PDO
-    {
-        $this->dsn = $dsn;
-        $this->username = $username;
-        $this->password = $password;
-
-        try {
-            return $this->getConnection();
-        } catch (PDOException $e) {
-            throw new PDOException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
-        }
-    }
-
-    public function getConnection(): PDO
-    {
-        return new PDO(
-            $this->dsn,
-            $this->username,
-            $this->password,
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-        );
     }
 
     public static function getInstance(): self
@@ -45,5 +20,28 @@ class Database {
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    public function connect(string $dsn, string $username, string $password): void
+    {
+        if ($this->pdo !== null) {
+            return;
+        }
+
+        try {
+            $this->pdo = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+        } catch (PDOException $e) {
+            throw new PDOException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+
+    public function getConnection(): PDO
+    {
+        if ($this->pdo === null) {
+            throw new PDOException('Database not connected. Call connect() first.');
+        }
+        return $this->pdo;
     }
 }
