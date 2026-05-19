@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Producto</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <h1>Formulario de Producto</h1>
+    <form id="product-form">
+        <div class="form-group">
+            <label for="producto-codigo">Código</label>
+            <input type="text" id="producto-codigo" name="producto-codigo" placeholder="Debe ser alfanumerico y contener al menos una letra y un número">
+        </div>
+        <div class="form-group">
+            <label for="producto-nombre">Nombre</label>
+            <input type="text" id="producto-nombre" name="producto-nombre" placeholder="Ingresar el nombre completo del producto">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="producto-bodega">Bodega</label>
+                <select id="producto-bodega" name="producto-bodega">
+                    <option value=""></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="producto-sucursal">Sucursal</label>
+                <select id="producto-sucursal" name="producto-sucursal" disabled>
+                    <option value=""></option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="producto-moneda">Moneda</label>
+                <select id="producto-moneda" name="producto-moneda">
+                    <option value=""></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="producto-precio">Precio</label>
+                <input type="text" id="producto-precio" name="producto-precio" placeholder="Hasta 2 decimales. Ej: 19.99">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Materiales</label>
+            <div id="producto-materiales" class="materials"></div>
+        </div>
+        <div class="form-group">
+            <label for="producto-descripcion">Descripción</label>
+            <textarea id="producto-descripcion" name="producto-descripcion" placeholder="Entre 10 y 1000 caracteres"></textarea>
+        </div>
+        <button type="submit">Guardar Producto</button>
+    </form>
+
+    <script src="js/api.js"></script>
+    <script src="js/validator.js"></script>
+    <script src="js/form.js"></script>
+</body>
+
+</html>
