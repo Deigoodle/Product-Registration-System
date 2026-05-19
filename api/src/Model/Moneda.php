@@ -14,16 +14,25 @@ class Moneda {
         $this->id = $data['id'] ?? null;
 
         // Campos obligatorios
-        if (!isset($data['nombre'] || empty($data['nombre']))) {
+        if (!isset($data['nombre']) || $data['nombre'] === '') {
             throw new \InvalidArgumentException('El campo "nombre" es obligatorio.');
         }
-        if (!isset($data['codigo'] || empty($data['codigo']))) {
+        if (!isset($data['codigo']) || $data['codigo'] === '') {
             throw new \InvalidArgumentException('El campo "codigo" es obligatorio.');
         }
 
         // Guardar valores
         $this->nombre = $data['nombre'] ?? '';
         $this->codigo = $data['codigo'] ?? '';
+    }
+
+    public static function fromRow(array $row): self
+    {
+        return new self([
+            'id' => (int) $row['id'],
+            'nombre' => $row['nombre'],
+            'codigo' => $row['codigo'],
+        ]);
     }
 
     public function toArray(): array

@@ -13,11 +13,19 @@ class Bodega {
         $this->id = $data['id'] ?? null;
 
         // Campos obligatorios
-        if (!isset($data['nombre'] || empty($data['nombre']))) {
+        if (!isset($data['nombre']) || $data['nombre'] === '') {
             throw new \InvalidArgumentException('El campo "nombre" es obligatorio.');
         }
 
         $this->nombre = $data['nombre'];
+    }
+
+    public static function fromRow(array $row): self
+    {
+        return new self([
+            'id' => (int) $row['id'],
+            'nombre' => $row['nombre'],
+        ]);
     }
 
     public function toArray(): array

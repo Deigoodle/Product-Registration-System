@@ -18,6 +18,15 @@ class Material {
             : [];
     }
 
+    public static function fromRow(array $row): self
+    {
+        return new self([
+            'id' => (int) $row['id'],
+            'nombre' => $row['nombre'],
+            'productos' => [],
+        ]);
+    }
+
     public function toArray(): array
     {
         return [
